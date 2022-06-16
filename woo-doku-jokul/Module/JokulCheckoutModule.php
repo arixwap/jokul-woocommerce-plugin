@@ -50,7 +50,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
         if( WC()->session != null ){
                 $chosen_payment_method = WC()->session->get('chosen_payment_method');
             if ($chosen_payment_method == 'jokul_checkout') {
-                if ($haystack[1] == 'jokul=show') {
+                if (isset($haystack[1]) && $haystack[1] == 'jokul=show') {
                     add_filter('the_title',  array($this, 'woo_title_order_pending'));
                     add_action('woocommerce_thankyou_' . $this->id, array($this, 'thank_you_page_pending'), 1, 10);
                 } else {
