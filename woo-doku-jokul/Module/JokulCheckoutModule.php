@@ -63,25 +63,20 @@ class JokulCheckoutModule extends WC_Payment_Gateway
 
     public function get_order_data($order)
     {
-        $order_post = get_post($order->id);
+        $order_post = get_post($order->get_id());
         $dp = wc_get_price_decimals();
         $order_data = array();
         // add line items
         foreach ($order->get_items() as $item_id => $item) {
-            $product = $order->get_product_from_item($item);
+            $product = $item->get_product();
             $term_names = wp_get_post_terms( $item->get_product_id(), 'product_cat', array('fields' => 'names') );
             $categories_string = implode(',', $term_names);
             $product_id = null;
             $product_sku = null;
             // Check if the product exists.
             if (is_object($product)) {
-                $product_id = isset($product->variation_id) ? $product->variation_id : $product->id;
+                $product_id = $product->get_id();
                 $product_sku = $product->get_sku();
-            }
-            $meta = new WC_Order_Item_Meta($item, $product);
-            $item_meta = array();
-            foreach ($meta->get_formatted(null) as $meta_key => $formatted_meta) {
-                $item_meta[] = array('key' => $meta_key, 'label' => $formatted_meta['label'], 'value' => $formatted_meta['value']);
             }
             $order_data[] = array('price' => wc_format_decimal($order->get_item_total($item, false, false), $dp), 'quantity' => wc_stock_amount($item['qty']), 'name' => str_replace(array( '(', ')', ','), '', $item['name']), 'sku' => $product_sku, 'category' => $categories_string);
 
@@ -120,19 +115,19 @@ class JokulCheckoutModule extends WC_Payment_Gateway
         global $woocommerce;
 
         $order  = wc_get_order($order_id);
-        $amount = $order->order_total;
+        $amount = $order->get_total();
         $order_data = $order->get_data();
 
         $params = array(
-            'customerId' => 0 !== $order->get_customer_id() ? $order->get_customer_id() : preg_replace('/[^0-9]/', '', $order->billing_phone),
+            'customerId' => 0 !== $order->get_customer_id() ? $order->get_customer_id() : preg_replace('/[^0-9]/', '', $order->get_billing_phone()),
             'customerEmail' => $order->get_billing_email(),
             'customerName' => $order->get_billing_first_name() . " " . $order->get_billing_last_name(),
             'amount' => $amount,
             'invoiceNumber' => $order->get_order_number(),
             'expiryTime' => $this->expiredTime,
-            'phone' => preg_replace('/[^0-9]/', '', $order->billing_phone),
-            'country' => $order->billing_country,
-            'address' => $order->shipping_address_1,
+            'phone' => preg_replace('/[^0-9]/', '', $order->get_billing_phone()),
+            'country' => $order->get_billing_country(),
+            'address' => $order->get_shipping_address_1(),
             'itemQty' => $this->get_order_data($order),
             'payment_method' => $this->payment_method,
             'postcode' => $order_data['billing']['postcode'],
