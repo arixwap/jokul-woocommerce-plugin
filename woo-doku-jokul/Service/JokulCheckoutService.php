@@ -16,7 +16,7 @@ class JokulCheckoutService {
         $dateTime = date(DATE_ISO8601, strtotime($dateTime));
         $dateTimeFinal = substr($dateTime,0,19)."Z";
 
-        $data = $params['sac_check'] === 'yes' ? array(
+        $data = apply_filters( 'jokul_checkout_service_data', array(
             "order" => array(
                 "invoice_number" => $params['invoiceNumber'],
                 "line_items" => $params['itemQty'],
@@ -38,40 +38,17 @@ class JokulCheckoutService {
                 "city" => $params['city'],
                 "address" => $params['address']
             ),
-            "additional_info" => array (
+            "additional_info" => ($params['sac_check'] === 'yes') ? array (
                 "integration" => array (
                     "name" => "woocommerce-plugin",
                     "version" => "1.3.7",
                     "cms_version" => $params['woo_version']
                 ),
                 "account" => array(
-                    "id" =>  $params['sac_textbox']
+                    "id" => $params['sac_textbox']
                 ),
                 "method" => "Jokul Checkout"
-            )
-        ) :  array(
-            "order" => array(
-                "invoice_number" => $params['invoiceNumber'],
-                "line_items" => $params['itemQty'],
-                "amount" => $params['amount'],
-                "callback_url" => $params['callback_url'],
-                "currency" => "IDR"
-            ),
-            "payment" => array(
-                "payment_due_date" => $params['expiryTime']
-            ),
-            "customer" => array(
-                "id" => $params['customerId'],
-                "name" => trim($params['customerName']),
-                "email" => $params['customerEmail'],
-                "phone" => $params['phone'],
-                "country" => $params['country'],
-                "postcode" => $params['postcode'],
-                "state" => $params['state'],
-                "city" => $params['city'],
-                "address" => $params['address']
-            ),
-            "additional_info" => array (
+            ) : array (
                 "integration" => array (
                     "name" => "woocommerce-plugin",
                     "version" => "1.3.7",
@@ -79,7 +56,7 @@ class JokulCheckoutService {
                 ),
                 "method" => "Jokul Checkout"
             )
-        );
+        ) );
 
         $this->jokulConfig = new JokulConfig();
         $valueEnv = $config['environment'] === 'true'? true: false;
@@ -104,13 +81,12 @@ class JokulCheckoutService {
             'Request-Id:'.$requestId,
             'Client-Id:'.$config['client_id'],
             'Request-Timestamp:'.$dateTimeFinal,
-        
         ));
 
         $responseJson = curl_exec($ch);
 
         curl_close($ch);
-        
+
         $this->jokulUtils->doku_log($this, 'Jokul Checkout REQUEST : ' . json_encode($data), $params['invoiceNumber']);
         $this->jokulUtils->doku_log($this, 'Jokul Checkout REQUEST URL : ' . $url, $params['invoiceNumber']);
         $this->jokulUtils->doku_log($this, 'Jokul Checkout RESPONSE : ' . json_encode($responseJson, JSON_PRETTY_PRINT), $params['invoiceNumber']);
