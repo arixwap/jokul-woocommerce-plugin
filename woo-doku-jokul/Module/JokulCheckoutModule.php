@@ -21,22 +21,22 @@ class JokulCheckoutModule extends WC_Payment_Gateway
 
         $this->init_settings();
         $mainSettings = get_option('woocommerce_jokul_gateway_settings');
-        $this->environmentPaymentJokul = $mainSettings['environment_payment_jokul'];
-        $this->sandboxClientId = $mainSettings['sandbox_client_id'];
-        $this->sandboxSharedKey = $mainSettings['sandbox_shared_key'];
-        $this->prodClientId = $mainSettings['prod_client_id'];
-        $this->prodSharedKey = $mainSettings['prod_shared_key'];
-        $this->expiredTime = $mainSettings['expired_time'];
-        $this->emailNotifications = $mainSettings['email_notifications'];
+        $this->environmentPaymentJokul = isset($mainSettings['environment_payment_jokul']) ? $mainSettings['environment_payment_jokul'] : null;
+        $this->sandboxClientId = isset($mainSettings['sandbox_client_id']) ? $mainSettings['sandbox_client_id'] : null;
+        $this->sandboxSharedKey = isset($mainSettings['sandbox_shared_key']) ? $mainSettings['sandbox_shared_key'] : null;
+        $this->prodClientId = isset($mainSettings['prod_client_id']) ? $mainSettings['prod_client_id'] : null;
+        $this->prodSharedKey = isset($mainSettings['prod_shared_key']) ? $mainSettings['prod_shared_key'] : null;
+        $this->expiredTime = isset($mainSettings['expired_time']) ? $mainSettings['expired_time'] : null;
+        $this->emailNotifications = isset($mainSettings['email_notifications']) ? $mainSettings['email_notifications'] : null;
 
         $this->enabled = $this->get_option('enabled');
         $this->channelName = $this->get_option('channel_name');
         $paymentDescription = $this->get_option('payment_description');
 
         $this->payment_method = $this->get_option('payment_method');
-        
-        $this->sac_check = $mainSettings['sac_check' ];
-        $this->sac_textbox = $mainSettings['sac_textbox'];
+
+        $this->sac_check = isset($mainSettings['sac_check' ]) ? $mainSettings['sac_check' ] : null;
+        $this->sac_textbox = isset($mainSettings['sac_textbox']) ? $mainSettings['sac_textbox'] : null;
 
         if (empty($paymentDescription)) {
             $this->paymentDescription   = 'Bayar Pesanan Dengan Jokul Checkout';
@@ -85,7 +85,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
             }
             $order_data[] = array('price' => wc_format_decimal($order->get_item_total($item, false, false), $dp), 'quantity' => wc_stock_amount($item['qty']), 'name' => str_replace(array( '(', ')', ','), '', $item['name']), 'sku' => $product_sku, 'category' => $categories_string);
 
-            
+
         }
         // Add shipping.
         foreach ($order->get_shipping_methods() as $shipping_item_id => $shipping_item) {
@@ -161,7 +161,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
             'shared_key' => $sharedKey,
             'environment' => $this->environmentPaymentJokul
         );
-        
+
         update_post_meta($order_id, 'checkoutParams', $params);
         update_post_meta($order_id, 'checkoutConfig', $config);
 
@@ -270,7 +270,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
 
     public function addDb($response, $amount)
     {
-        
+
         $this->jokulUtils = new JokulUtils();
         $getIp = $this->jokulUtils->getIpaddress();
         $trx = array();
@@ -285,7 +285,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
         $trx['doku_payment_datetime']   = gmdate("Y-m-d H:i:s");
         $trx['process_datetime']        = gmdate("Y-m-d H:i:s");
         $trx['message']                 = "Payment Pending message come from Jokul. Success : completed";
-        
+
 
         $this->jokulDb = new JokulDb();
         $this->jokulDb->addData($trx);
@@ -318,7 +318,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
             return $title;
         }
     }
-    
+
     function woo_title_order_received($title)
     {
         global $woocommerce;

@@ -93,7 +93,7 @@ return apply_filters(
         ),
         'sac_textbox' => array(
             'style' => '',
-            'class'         => array('jokul_class'),
+            'class'         => 'jokul_class',
             'title' => __('On Behalf Of:', 'jokul'),
             'type' => 'text',
             'description' => __('Route to yout Jokul Sub Account ID. All transactions will be linked to this account', 'jokul'),

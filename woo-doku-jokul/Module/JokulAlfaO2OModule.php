@@ -20,21 +20,21 @@ class JokulAlfaO2OModule extends WC_Payment_Gateway
 
         $this->init_settings();
         $mainSettings = get_option('woocommerce_jokul_gateway_settings');
-        $this->environmentPaymentJokul = $mainSettings['environment_payment_jokul'];
-        $this->sandboxClientId = $mainSettings['sandbox_client_id'];
-        $this->sandboxSharedKey = $mainSettings['sandbox_shared_key'];
-        $this->prodClientId = $mainSettings['prod_client_id'];
-        $this->prodSharedKey = $mainSettings['prod_shared_key'];
-        $this->expiredTime = $mainSettings['expired_time'];
-        $this->emailNotifications = $mainSettings['email_notifications'];
+        $this->environmentPaymentJokul = isset($mainSettings['environment_payment_jokul']) ? $mainSettings['environment_payment_jokul'] : null;
+        $this->sandboxClientId = isset($mainSettings['sandbox_client_id']) ? $mainSettings['sandbox_client_id'] : null;
+        $this->sandboxSharedKey = isset($mainSettings['sandbox_shared_key']) ? $mainSettings['sandbox_shared_key'] : null;
+        $this->prodClientId = isset($mainSettings['prod_client_id']) ? $mainSettings['prod_client_id'] : null;
+        $this->prodSharedKey = isset($mainSettings['prod_shared_key']) ? $mainSettings['prod_shared_key'] : null;
+        $this->expiredTime = isset($mainSettings['expired_time']) ? $mainSettings['expired_time'] : null;
+        $this->emailNotifications = isset($mainSettings['email_notifications']) ? $mainSettings['email_notifications'] : null;
 
         $this->enabled = $this->get_option('enabled');
         $this->channelName = $this->get_option('channel_name');
         $this->footerMessage = $this->get_option('footer_message');
         $paymentDescription = $this->get_option('payment_description');
 
-        $this->sac_check = $mainSettings['sac_check' ];
-        $this->sac_textbox = $mainSettings['sac_textbox'];
+        $this->sac_check = isset($mainSettings['sac_check' ]) ? $mainSettings['sac_check' ] : null;
+        $this->sac_textbox = isset($mainSettings['sac_textbox']) ? $mainSettings['sac_textbox'] : null;
 
 
         if (empty($this->$paymentDescription)) {
@@ -193,7 +193,7 @@ class JokulAlfaO2OModule extends WC_Payment_Gateway
                 $processType = 'PAYMENT_PENDING';
 
                 JokulAlfaO2OModule::addDb($response, $amount, $order, $vaNumber, $vaExpired, $processType);
-                
+
                 $this->jokulUtils = new JokulUtils();
                 $this->jokulUtils->send_email($order, $params, $response['online_to_offline_info']['how_to_pay_api']);
 

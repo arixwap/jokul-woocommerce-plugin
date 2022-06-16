@@ -19,20 +19,20 @@ class JokulCreditCardModule extends WC_Payment_Gateway
 
         $this->init_settings();
         $mainSettings = get_option('woocommerce_jokul_gateway_settings');
-        $this->environmentPaymentJokul = $mainSettings['environment_payment_jokul'];
-        $this->sandboxClientId = $mainSettings['sandbox_client_id'];
-        $this->sandboxSharedKey = $mainSettings['sandbox_shared_key'];
-        $this->prodClientId = $mainSettings['prod_client_id'];
-        $this->prodSharedKey = $mainSettings['prod_shared_key'];
-        $this->expiredTime = $mainSettings['expired_time'];
-        $this->emailNotifications = $mainSettings['email_notifications'];
+        $this->environmentPaymentJokul = isset($mainSettings['environment_payment_jokul']) ? $mainSettings['environment_payment_jokul'] : null;
+        $this->sandboxClientId = isset($mainSettings['sandbox_client_id']) ? $mainSettings['sandbox_client_id'] : null;
+        $this->sandboxSharedKey = isset($mainSettings['sandbox_shared_key']) ? $mainSettings['sandbox_shared_key'] : null;
+        $this->prodClientId = isset($mainSettings['prod_client_id']) ? $mainSettings['prod_client_id'] : null;
+        $this->prodSharedKey = isset($mainSettings['prod_shared_key']) ? $mainSettings['prod_shared_key'] : null;
+        $this->expiredTime = isset($mainSettings['expired_time']) ? $mainSettings['expired_time'] : null;
+        $this->emailNotifications = isset($mainSettings['email_notifications']) ? $mainSettings['email_notifications'] : null;
 
         $this->enabled = $this->get_option( 'enabled' );
         $this->channelName = $this->get_option('channel_name');
         $paymentDescription = $this->get_option('payment_description');
 
-        $this->sac_check = $mainSettings['sac_check' ];
-        $this->sac_textbox = $mainSettings['sac_textbox'];
+        $this->sac_check = isset($mainSettings['sac_check' ]) ? $mainSettings['sac_check' ] : null;
+        $this->sac_textbox = isset($mainSettings['sac_textbox']) ? $mainSettings['sac_textbox'] : null;
 
         $this->language = $this->get_option('language_payment_jokul');
         $this->backgroundColor = $this->get_option('payment_background_color');
@@ -61,22 +61,22 @@ class JokulCreditCardModule extends WC_Payment_Gateway
 
     function my_disruptive_filter($content) {
         ?>
-        <script> 
-            #align-center{ 
-               display: block; 
-               justify-content: center; 
+        <script>
+            #align-center{
+               display: block;
+               justify-content: center;
              }
         </script>
         <?php
-    
+
         $url = "";
         if ( is_singular() && in_the_loop() && is_main_query() ) {
             $urlCC= get_post_meta('12', 'ccPageUrl', true);
             $url = "<div id='align_center'><iframe style='border:none' frameBorder='0' src=".$urlCC." title='Jokul Credit Card' height='350' width='100%'></iframe></div>";
         } else {
-            $url = $content; 
+            $url = $content;
         }
-             
+
         return $url;
     }
 
@@ -87,7 +87,7 @@ class JokulCreditCardModule extends WC_Payment_Gateway
         $order  = wc_get_order($order_id);
         $amount = $order->order_total;
         $itemQty = array();
-        
+
         foreach ($order->get_items() as $item_id => $item ) {
             $_product = wc_get_product($item->get_product_id());
             $Price = $_product->get_price();
@@ -120,7 +120,7 @@ class JokulCreditCardModule extends WC_Payment_Gateway
             'urlFail' => wc_get_page_permalink('checkout')."?status=failed",
             'sac_check' => $this->sac_check,
             'sac_textbox' => $this->sac_textbox,
-        );  
+        );
 
         if ($this->environmentPaymentJokul == 'false') {
             $clientId = $this->sandboxClientId;
@@ -229,14 +229,14 @@ class JokulCreditCardModule extends WC_Payment_Gateway
         <?php
     }
 
-    public function payment_fields() 
+    public function payment_fields()
     {
         if ($this->paymentDescription) {
             echo wpautop(wp_kses_post($this->paymentDescription));
         }
     }
 
-    public function addDb($response, $amount) 
+    public function addDb($response, $amount)
     {
         $this->jokulUtils = new JokulUtils();
         $getIp = $this->jokulUtils -> getIpaddress();
@@ -244,16 +244,16 @@ class JokulCreditCardModule extends WC_Payment_Gateway
         $trx = array();
 		$trx['invoice_number']          = $response['order']['invoice_number'];
 		$trx['result_msg']              = null;
-        $trx['process_type']            = 'PAYMENT_PENDING';  
+        $trx['process_type']            = 'PAYMENT_PENDING';
         $trx['raw_post_data']           = file_get_contents('php://input');
         $trx['ip_address']              = $getIp;
 		$trx['amount']                  = $amount;
 		$trx['payment_channel']         = $this->method_code;
 		$trx['payment_code']            = null;
 		$trx['doku_payment_datetime']   = gmdate("Y-m-d H:i:s");
-        $trx['process_datetime']        = gmdate("Y-m-d H:i:s");       
-        $trx['message']                 = "Payment Pending message come from Jokul. Success : completed";   
-                
+        $trx['process_datetime']        = gmdate("Y-m-d H:i:s");
+        $trx['message']                 = "Payment Pending message come from Jokul. Success : completed";
+
         $this->jokulDb = new JokulDb();
         $this->jokulDb -> addData($trx);
     }
