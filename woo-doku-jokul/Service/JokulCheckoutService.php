@@ -17,7 +17,15 @@ class JokulCheckoutService {
         $dateTimeFinal = substr($dateTime,0,19)."Z";
 
         $data = apply_filters( 'jokul_checkout_service_data', array(
-            "order" => array(
+            "order" => $params['auto_redirect'] === 'true' ? array(
+                "invoice_number" => $params['invoiceNumber'],
+                "line_items" => $params['itemQty'],
+                "amount" => $params['amount'],
+                "callback_url" => $params['callback_url'],
+                "currency" => "IDR",
+                "auto_redirect" => true,
+                "disable_retry_payment" => true
+            ): array(
                 "invoice_number" => $params['invoiceNumber'],
                 "line_items" => $params['itemQty'],
                 "amount" => $params['amount'],
@@ -38,23 +46,33 @@ class JokulCheckoutService {
                 "city" => $params['city'],
                 "address" => $params['address']
             ),
-            "additional_info" => ($params['sac_check'] === 'yes') ? array (
+            "shipping_address" => array(
+                "first_name" => $params['first_name_shipping'],
+                "address" => trim($params['address_shipping']),
+                "city" => $params['city_shipping'],
+                "postal_code" => $params['postal_code_shipping'],
+                "phone" => $params['phone'],
+                "country_code" => "ID"
+            ),
+            "additional_info" => $params['sac_check'] === 'yes' ? array(
                 "integration" => array (
                     "name" => "woocommerce-plugin",
-                    "version" => "1.3.7",
+                    "version" => "1.3.9",
                     "cms_version" => $params['woo_version']
                 ),
                 "account" => array(
                     "id" => $params['sac_textbox']
                 ),
-                "method" => "Jokul Checkout"
-            ) : array (
+                "method" => "Jokul Checkout",
+                "doku_wallet_notify_url" => ""
+            ): array(
                 "integration" => array (
                     "name" => "woocommerce-plugin",
-                    "version" => "1.3.7",
+                    "version" => "1.3.9",
                     "cms_version" => $params['woo_version']
                 ),
-                "method" => "Jokul Checkout"
+                "method" => "Jokul Checkout",
+                "doku_wallet_notify_url" => ""
             )
         ) );
 

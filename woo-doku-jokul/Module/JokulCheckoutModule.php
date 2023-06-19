@@ -34,6 +34,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
         $paymentDescription = $this->get_option('payment_description');
 
         $this->payment_method = $this->get_option('payment_method');
+        $this->auto_redirect_jokul = $this->get_option('auto_redirect_jokul');
 
         $this->sac_check = isset($mainSettings['sac_check' ]) ? $mainSettings['sac_check' ] : null;
         $this->sac_textbox = isset($mainSettings['sac_textbox']) ? $mainSettings['sac_textbox'] : null;
@@ -63,6 +64,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
 
     public function get_order_data($order)
     {
+        $pattern = "/[^A-Za-z0-9? .,_-]/";
         $order_post = get_post($order->get_id());
         $dp = wc_get_price_decimals();
         $order_data = array();
@@ -78,32 +80,37 @@ class JokulCheckoutModule extends WC_Payment_Gateway
                 $product_id = $product->get_id();
                 $product_sku = $product->get_sku();
             }
-            $order_data[] = array('price' => wc_format_decimal($order->get_item_total($item, false, false), $dp), 'quantity' => wc_stock_amount($item['qty']), 'name' => str_replace(array( '(', ')', ','), '', $item['name']), 'sku' => $product_sku, 'category' => $categories_string);
+            $meta = new WC_Order_Item_Meta($item, $product);
+            $item_meta = array();
+            foreach ($meta->get_formatted(null) as $meta_key => $formatted_meta) {
+                $item_meta[] = array('key' => $meta_key, 'label' => $formatted_meta['label'], 'value' => $formatted_meta['value']);
+            }
+            $order_data[] = array('price' => wc_format_decimal($order->get_item_total($item, false, false), $dp), 'quantity' => wc_stock_amount($item['qty']), 'name' => preg_replace($pattern, "", $item['name']), 'sku' => $product_sku, 'category' => $categories_string, 'url' => 'https://www.doku.com/');
 
 
         }
         // Add shipping.
         foreach ($order->get_shipping_methods() as $shipping_item_id => $shipping_item) {
             if (wc_format_decimal($shipping_item['cost'], $dp) > 0) {
-                $order_data[] = array('name' => str_replace(array( '(', ')' ), '', $shipping_item['name']), 'price' => wc_format_decimal($shipping_item['cost'], $dp), 'quantity' => '1', 'sku' => 'ship-01', 'category' => 'uncategorized');
+                $order_data[] = array('name' => preg_replace($pattern, "", $shipping_item['name']), 'price' => wc_format_decimal($shipping_item['cost'], $dp), 'quantity' => '1', 'sku' => '0', 'category' => 'uncategorized', 'url' => 'https://www.doku.com/');
             }
         }
         // Add taxes.
         foreach ($order->get_tax_totals() as $tax_code => $tax) {
             if (wc_format_decimal($tax->amount, $dp) > 0) {
-                $order_data[] = array('name' => $tax->label, 'price' => wc_format_decimal($tax->amount, $dp), 'quantity' => '1', 'sku' => 'tax-01', 'category' => 'uncategorized');
+                $order_data[] = array('name' => preg_replace($pattern, "", $tax->label), 'price' => wc_format_decimal($tax->amount, $dp), 'quantity' => '1', 'sku' => '0', 'category' => 'uncategorized', 'url' => 'https://www.doku.com/');
             }
         }
         // Add fees.
         foreach ($order->get_fees() as $fee_item_id => $fee_item) {
             if (wc_format_decimal($order->get_line_total($fee_item), $dp) > 0) {
-                $order_data[] = array('name' => $fee_item['name'], 'price' => wc_format_decimal($order->get_line_total($fee_item), $dp), 'quantity' => '1', 'sku' => 'fee-01', 'category' => 'uncategorized');
+                $order_data[] = array('name' => preg_replace($pattern, "", $fee_item['name']), 'price' => wc_format_decimal($order->get_line_total($fee_item), $dp), 'quantity' => '1', 'sku' => '0', 'category' => 'uncategorized', 'url' => 'https://www.doku.com/');
             }
         }
         // Add coupons.
         foreach ($order->get_items('coupon') as $coupon_item_id => $coupon_item) {
             if (wc_format_decimal($coupon_item['discount_amount'], $dp) > 0) {
-                $order_data[] = array('name' => $coupon_item['name'], 'price' => wc_format_decimal($coupon_item['discount_amount'], $dp), 'quantity' => '1', 'sku' => 'coupon-01', 'category' => 'uncategorized');
+                $order_data[] = array('name' => preg_replace($pattern, "", $coupon_item['name']), 'price' => wc_format_decimal($coupon_item['discount_amount'], $dp), 'quantity' => '1', 'sku' => '0', 'category' => 'uncategorized', 'url' => 'https://www.doku.com/');
             }
         }
         $order_data = apply_filters('woocommerce_cli_order_data', $order_data);
@@ -113,25 +120,26 @@ class JokulCheckoutModule extends WC_Payment_Gateway
     public function process_payment($order_id)
     {
         global $woocommerce;
+        $pattern = "/[^A-Za-z0-9? .-\/+,=_:@]/";
 
         $order  = wc_get_order($order_id);
         $amount = $order->get_total();
         $order_data = $order->get_data();
 
         $params = array(
-            'customerId' => 0 !== $order->get_customer_id() ? $order->get_customer_id() : preg_replace('/[^0-9]/', '', $order->get_billing_phone()),
+            'customerId' => 0 !== $order->get_customer_id() ? $order->get_customer_id() : null,
             'customerEmail' => $order->get_billing_email(),
             'customerName' => $order->get_billing_first_name() . " " . $order->get_billing_last_name(),
             'amount' => $amount,
             'invoiceNumber' => $order->get_order_number(),
             'expiryTime' => $this->expiredTime,
-            'phone' => preg_replace('/[^0-9]/', '', $order->get_billing_phone()),
+            'phone' => $order->get_billing_phone(),
             'country' => $order->get_billing_country(),
-            'address' => $order->get_shipping_address_1(),
+            'address' => preg_replace($pattern, "", $order->get_shipping_address_1()),
             'itemQty' => $this->get_order_data($order),
             'payment_method' => $this->payment_method,
             'postcode' => $order_data['billing']['postcode'],
-            'state' => $order_data['billing']['state'] !== null ? $order_data['billing']['state'] : "",
+            'state' => $order_data['billing']['state'],
             'city' => $order_data['billing']['city'],
             'info1' => '',
             'info2' => '',
@@ -140,7 +148,12 @@ class JokulCheckoutModule extends WC_Payment_Gateway
             'reusableStatus' => false,
             'callback_url' => $this->get_return_url($order) . '&' . $order_id,
             'sac_check' => $this->sac_check,
+            'auto_redirect' => $this->auto_redirect_jokul,
             'sac_textbox' => $this->sac_textbox,
+            'first_name_shipping' => $order->shipping_first_name,
+            'address_shipping' => preg_replace($pattern, "",$order->shipping_address_1),
+            'city_shipping' => $order->shipping_city,
+            'postal_code_shipping' => $order->shipping_postcode
         );
 
         if ($this->environmentPaymentJokul == 'false') {
@@ -164,13 +177,12 @@ class JokulCheckoutModule extends WC_Payment_Gateway
         $response = $this->jokulCheckoutService->generated($config, $params);
         if (!is_wp_error($response)) {
             if ($response['message'][0] == "SUCCESS" && isset($response['response']['payment']['url'])) {
-                update_post_meta('13', 'checkoutUrl', $response['response']['payment']['url']);
+                update_post_meta($order_id, 'checkoutUrl', $response['response']['payment']['url']);
                 JokulCheckoutModule::addDb($response, $amount);
                 $this->orderId = $order_id;
                 return array(
                     'result' => 'success',
                     'redirect' => $this->get_return_url($order) . "&jokul=show&" . $order_id
-                    // 'redirect' => wc_get_page_permalink('checkout')."?jokul=show"
                 );
             } else {
                 wc_add_notice('There is something wrong. Please try again.', 'error');
@@ -288,7 +300,7 @@ class JokulCheckoutModule extends WC_Payment_Gateway
 
     public function thank_you_page_pending($order_id)
     {
-        $jokulCheckoutURL       = get_post_meta('13', 'checkoutUrl', true);
+        $jokulCheckoutURL       = get_post_meta($order_id, 'checkoutUrl', true);
     ?>
         <div style="text-align: center;">
             <button style="text-align:center;background-color: red;color: white;" onclick="openPopup()"> Proceed to Payment</button>
@@ -319,8 +331,10 @@ class JokulCheckoutModule extends WC_Payment_Gateway
         global $woocommerce;
 
         if (function_exists('is_order_received_page') && is_order_received_page() && $title === 'Order received') {
-            $haystack = explode("&", $_SERVER['QUERY_STRING']);
-            $order  = wc_get_order($haystack[1]);
+            global $wp;
+            $order_id = absint($wp->query_vars['order-received']);
+            $order  = wc_get_order($order_id);
+
             $woocommerce->cart->empty_cart();
             wc_reduce_stock_levels($order->get_id());
 
