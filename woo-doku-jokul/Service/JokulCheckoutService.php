@@ -64,7 +64,7 @@ class JokulCheckoutService {
                     "id" => $params['sac_textbox']
                 ),
                 "method" => "Jokul Checkout",
-                "doku_wallet_notify_url" => ""
+                "doku_wallet_notify_url" => site_url('wp-json/jokul/notification'),
             ): array(
                 "integration" => array (
                     "name" => "woocommerce-plugin",
@@ -72,7 +72,7 @@ class JokulCheckoutService {
                     "cms_version" => $params['woo_version']
                 ),
                 "method" => "Jokul Checkout",
-                "doku_wallet_notify_url" => ""
+                "doku_wallet_notify_url" => site_url('wp-json/jokul/notification'),
             )
         ) );
 
