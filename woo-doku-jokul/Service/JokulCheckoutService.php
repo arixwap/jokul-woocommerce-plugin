@@ -11,12 +11,12 @@ class JokulCheckoutService {
         $this->jokulUtils = new JokulUtils();
 
         $requestId = $this->jokulUtils->guidv4();
-        $targetPath= "/checkout/v1/payment";
+        $targetPath= apply_filters( "jokul_checkout_endpoint", "/checkout/v1/payment" );
         $dateTime = gmdate("Y-m-d H:i:s");
         $dateTime = date(DATE_ISO8601, strtotime($dateTime));
         $dateTimeFinal = substr($dateTime,0,19)."Z";
 
-        $data = apply_filters( 'jokul_checkout_service_data', array(
+        $data = array(
             "order" => $params['auto_redirect'] === 'true' ? array(
                 "invoice_number" => $params['invoiceNumber'],
                 "line_items" => $params['itemQty'],
@@ -74,7 +74,9 @@ class JokulCheckoutService {
                 "method" => "Jokul Checkout",
                 "doku_wallet_notify_url" => site_url('wp-json/jokul/notification'),
             )
-        ) );
+        );
+
+        $data = apply_filters( 'jokul_checkout_service_data', $data );
 
         $this->jokulConfig = new JokulConfig();
         $valueEnv = $config['environment'] === 'true'? true: false;
