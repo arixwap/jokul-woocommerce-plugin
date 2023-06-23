@@ -184,6 +184,14 @@ class JokulCheckoutModule extends WC_Payment_Gateway
                     'result' => 'success',
                     'redirect' => $this->get_return_url($order) . "&jokul=show&" . $order_id
                 );
+            } else if ( isset($response['payment']['url']) ) {
+                update_post_meta($order_id, 'checkoutUrl', $response['payment']['url']);
+                JokulCheckoutModule::addDb($response, $amount);
+                $this->orderId = $order_id;
+                return array(
+                    'result' => 'success',
+                    'redirect' => $response['payment']['url']
+                );
             } else {
                 wc_add_notice('There is something wrong. Please try again.', 'error');
             }
